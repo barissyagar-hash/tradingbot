@@ -7,7 +7,7 @@ import json
 # TELEGRAM AYARLARI
 # ===============================
 
-TELEGRAM_TOKEN = "7953369484:AAHQRGl0O-np81FujOn3VDh562uyKMx5D3I"
+TELEGRAM_TOKEN = "7953369484:AAHjWmHHIPQfVZRmlB_EQRtLdVUrkuN22DI"
 CHAT_ID = "1021828111"
 
 def send_telegram(msg):
@@ -46,3 +46,4 @@ keep_alive()
 
 # Bot açıldığında 1 kere mesaj
 send_telegram("🚀 Bot aktif! TradingView sinyalleri için webhook hazır. /webhook dinlemede.")
+
