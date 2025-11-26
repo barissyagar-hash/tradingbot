@@ -1,14 +1,13 @@
 from keep_alive import keep_alive
 from flask import Flask, request
 import requests
-import time
-import pandas as pd
+import json
 
-# ======================================================
+# ===============================
 # TELEGRAM AYARLARI
-# ======================================================
+# ===============================
 
-TELEGRAM_TOKEN = "7953369484:AAFFlYYwpAbWckQwYKmmqxQaB4c2Yb0vFRs"
+TELEGRAM_TOKEN = "7953369484:AAHQRGl0O-np81FujOn3VDh562uyKMx5D3I"
 CHAT_ID = "1021828111"
 
 def send_telegram(msg):
@@ -19,74 +18,31 @@ def send_telegram(msg):
     except Exception as e:
         print("Telegram hatası:", e)
 
-# ======================================================
-# TRADINGVIEW WEBHOOK — SİNYAL ALICI
-# ======================================================
+# ===============================
+# FLASK → TRADINGVIEW WEBHOOK
+# ===============================
 
 app = Flask(__name__)
 
-@app.route('/', methods=['POST', 'GET'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
-    if request.method == 'POST':
-        try:
-            data = request.data.decode('utf-8').strip()
+    data = request.json
 
-            # ÖRN: “BTCUSDT BUY” veya “AVAXUSDT SELL”
-            if data:
-                send_telegram(f"📢 TradingView Sinyali: {data}")
-                print("TradingView sinyali alındı:", data)
+    # TradingView senin gönderdiğin JSON'u buraya yollayacak
+    signal = data.get("signal")
+    symbol = data.get("symbol")
 
-            return "OK", 200
+    if signal and symbol:
+        send_telegram(f"📢 TradingView Sinyali!\n\n{symbol} → {signal}")
 
-        except Exception as e:
-            print("Webhook Hatası:", e)
-            return "ERROR", 500
+    return {"status": "ok"}, 200
 
-    return "Bot is alive!", 200
 
-# ======================================================
-# COIN TARAYICI (İstersen kapatabiliriz)
-# ======================================================
-
-COIN_LIST = [
-    "BTCUSDT",
-    "ETHUSDT",
-    "SOLUSDT",
-    "XRPUSDT",
-    "AVAXUSDT",
-    "DOGEUSDT"
-]
-
-def get_price(symbol):
-    try:
-        url = f"https://api.bitget.com/api/v2/spot/market/tickers?symbol={symbol}"
-        data = requests.get(url).json()
-        return float(data["data"][0]["lastPr"])
-    except:
-        return None
-
-def tarama_islemi():
-    print("🔍 Coinler taranıyor...")
-    for coin in COIN_LIST:
-        price = get_price(coin)
-        if price:
-            print(f"{coin}: {price}")
-
-# ======================================================
-# BOTU AKTİF TUT
-# ======================================================
+# ===============================
+# KEEP ALIVE
+# ===============================
 
 keep_alive()
 
-sent_start_message = False
-
-while True:
-
-    if not sent_start_message:
-        send_telegram("🚀 Bot aktif! Webhook + Sinyal sistemi açıldı.")
-        sent_start_message = True
-
-    # Tarayıcı çalışsın istiyorsan açık kalsın
-    tarama_islemi()
-
-    time.sleep(120)
+# Bot açıldığında 1 kere mesaj
+send_telegram("🚀 Bot aktif! TradingView sinyalleri için webhook hazır. /webhook dinlemede.")
