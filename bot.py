@@ -1,7 +1,6 @@
 from keep_alive import keep_alive
 from flask import Flask, request
 import requests
-import json
 
 # ===============================
 # TELEGRAM AYARLARI
@@ -19,23 +18,31 @@ def send_telegram(msg):
         print("Telegram hatası:", e)
 
 # ===============================
-# FLASK → TRADINGVIEW WEBHOOK
+# FLASK APP
 # ===============================
 
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.json
+    try:
+        data = request.json
 
-    # TradingView senin gönderdiğin JSON'u buraya yollayacak
-    signal = data.get("signal")
-    symbol = data.get("symbol")
+        signal = data.get("signal")
+        symbol = data.get("symbol")
 
-    if signal and symbol:
-        send_telegram(f"📢 TradingView Sinyali!\n\n{symbol} → {signal}")
+        if signal and symbol:
+            send_telegram(f"📢 TradingView Sinyali!\n{symbol} → {signal}")
+            return {"status": "ok"}, 200
 
-    return {"status": "ok"}, 200
+        return {"error": "Eksik veri"}, 400
+
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 # ===============================
@@ -44,6 +51,4 @@ def webhook():
 
 keep_alive()
 
-# Bot açıldığında 1 kere mesaj
-send_telegram("🚀 Bot aktif! TradingView sinyalleri için webhook hazır. /webhook dinlemede.")
-
+send_telegram("🚀 Bot aktif! TradingView sinyalleri için webhook dinlemede.")
