@@ -1,9 +1,8 @@
 from keep_alive import keep_alive
+from flask import Flask, request
 import requests
 import time
 import pandas as pd
-import numpy as np
-from datetime import datetime
 
 # ======================================================
 # TELEGRAM AYARLARI
@@ -21,7 +20,32 @@ def send_telegram(msg):
         print("Telegram hatası:", e)
 
 # ======================================================
-# TARANACAK COIN LİSTESİ
+# TRADINGVIEW WEBHOOK — SİNYAL ALICI
+# ======================================================
+
+app = Flask(__name__)
+
+@app.route('/', methods=['POST', 'GET'])
+def webhook():
+    if request.method == 'POST':
+        try:
+            data = request.data.decode('utf-8').strip()
+
+            # ÖRN: “BTCUSDT BUY” veya “AVAXUSDT SELL”
+            if data:
+                send_telegram(f"📢 TradingView Sinyali: {data}")
+                print("TradingView sinyali alındı:", data)
+
+            return "OK", 200
+
+        except Exception as e:
+            print("Webhook Hatası:", e)
+            return "ERROR", 500
+
+    return "Bot is alive!", 200
+
+# ======================================================
+# COIN TARAYICI (İstersen kapatabiliriz)
 # ======================================================
 
 COIN_LIST = [
@@ -33,46 +57,23 @@ COIN_LIST = [
     "DOGEUSDT"
 ]
 
-# ======================================================
-# FİYAT ÇEKEN FONKSİYON
-# ======================================================
-
 def get_price(symbol):
     try:
         url = f"https://api.bitget.com/api/v2/spot/market/tickers?symbol={symbol}"
         data = requests.get(url).json()
-
-        price = float(data["data"][0]["lastPr"])
-
-        print(f"{symbol} fiyat çekildi: {price}")  # ⭐ LOG EKLEDİK
-
-        return price
-
-    except Exception as e:
-        print("Fiyat çekme hatası:", e)
+        return float(data["data"][0]["lastPr"])
+    except:
         return None
 
-# ======================================================
-# TARAYICI
-# ======================================================
-
 def tarama_islemi():
-    print("🔍 Tarama başladı...")  # ⭐ LOG EKLEDİK
-
+    print("🔍 Coinler taranıyor...")
     for coin in COIN_LIST:
         price = get_price(coin)
-
-        if price is None:
-            continue
-
-        # Basit sinyal örneği
-        if price > 100:
-            send_telegram(f"📈 AL SİNYALİ! {coin} fiyat: {price}")
-
-    print("⏳ Tarama bitti, 120sn bekleniyor...")  # ⭐ LOG EKLEDİK
+        if price:
+            print(f"{coin}: {price}")
 
 # ======================================================
-# ANA DÖNGÜ
+# BOTU AKTİF TUT
 # ======================================================
 
 keep_alive()
@@ -82,8 +83,10 @@ sent_start_message = False
 while True:
 
     if not sent_start_message:
-        send_telegram("🚀 Bot çalıştı! Bitget sinyal botu aktif.")
+        send_telegram("🚀 Bot aktif! Webhook + Sinyal sistemi açıldı.")
         sent_start_message = True
 
+    # Tarayıcı çalışsın istiyorsan açık kalsın
     tarama_islemi()
+
     time.sleep(120)
