@@ -34,7 +34,7 @@ COIN_LIST = [
 ]
 
 # ======================================================
-# FİYAT ÇEKEN FONKSİYON (BİTGET REAL API)
+# FİYAT ÇEKEN FONKSİYON
 # ======================================================
 
 def get_price(symbol):
@@ -43,6 +43,9 @@ def get_price(symbol):
         data = requests.get(url).json()
 
         price = float(data["data"][0]["lastPr"])
+
+        print(f"{symbol} fiyat çekildi: {price}")  # ⭐ LOG EKLEDİK
+
         return price
 
     except Exception as e:
@@ -54,7 +57,7 @@ def get_price(symbol):
 # ======================================================
 
 def tarama_islemi():
-    print("🔍 Coinler taranıyor...")
+    print("🔍 Tarama başladı...")  # ⭐ LOG EKLEDİK
 
     for coin in COIN_LIST:
         price = get_price(coin)
@@ -62,11 +65,11 @@ def tarama_islemi():
         if price is None:
             continue
 
-        print(f"{coin} fiyat: {price}")
-
         # Basit sinyal örneği
         if price > 100:
             send_telegram(f"📈 AL SİNYALİ! {coin} fiyat: {price}")
+
+    print("⏳ Tarama bitti, 120sn bekleniyor...")  # ⭐ LOG EKLEDİK
 
 # ======================================================
 # ANA DÖNGÜ
@@ -83,5 +86,4 @@ while True:
         sent_start_message = True
 
     tarama_islemi()
-
     time.sleep(120)
